@@ -1,7 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { StockQuote, AnalysisRecommendation, PortfolioAnalysis } from "../../shared/schema.js";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let _client: Anthropic | null = null;
+function getClient(): Anthropic {
+  if (!_client) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set in environment");
+    _client = new Anthropic({ apiKey });
+  }
+  return _client;
+}
 
 type PortfolioInput = { symbol: string; shares: number; quote: StockQuote | null };
 
@@ -60,8 +68,8 @@ export async function analyzePortfolio(
 ): Promise<PortfolioAnalysis> {
   const prompt = buildPrompt(items);
 
-  const response = await client.beta.messages.create({
-    model: "claude-sonnet-4-20250514",
+  const response = await getClient().beta.messages.create({
+    model: "claude-sonnet-4-5",
     max_tokens: 4096,
     betas: ["web-search-2025-03-05"],
     tools: [{ type: "web_search_20250305", name: "web_search" } as any],

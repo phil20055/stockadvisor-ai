@@ -1,5 +1,5 @@
 {
-  "name": "stockadvisor-ai",
+  "name": "market-sage",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -40,7 +40,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "wouter": "^3.3.5",
-    "yahoo-finance2": "^2.13.3",
+    "yahoo-finance2": "^3.14.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

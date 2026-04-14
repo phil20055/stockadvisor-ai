@@ -1,7 +1,7 @@
-import yahooFinance from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
 import type { StockQuote, StockSearchResult, MarketIndex } from "../../shared/schema.js";
 
-yahooFinance.suppressNotices(["yahooSurvey"]);
+const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
 export async function searchStocks(query: string): Promise<StockSearchResult[]> {
   if (!query) return [];
@@ -15,14 +15,15 @@ export async function searchStocks(query: string): Promise<StockSearchResult[]> 
         type: q.quoteType || "EQUITY",
         exchange: q.exchange || q.exchDisp || "",
       }));
-  } catch {
+  } catch (err) {
+    console.error("[yahoo.search]", (err as Error).message);
     return [];
   }
 }
 
 export async function getQuote(symbol: string): Promise<StockQuote | null> {
   try {
-    const q = await yahooFinance.quote(symbol);
+    const q: any = await yahooFinance.quote(symbol);
     if (!q) return null;
     return {
       symbol: q.symbol ?? symbol,
@@ -36,7 +37,8 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
       week52High: q.fiftyTwoWeekHigh,
       week52Low: q.fiftyTwoWeekLow,
     };
-  } catch {
+  } catch (err) {
+    console.error(`[yahoo.quote ${symbol}]`, (err as Error).message);
     return null;
   }
 }
@@ -45,10 +47,10 @@ export async function getQuotes(symbols: string[]): Promise<StockQuote[]> {
   if (symbols.length === 0) return [];
   try {
     const results = await yahooFinance.quote(symbols);
-    const arr = Array.isArray(results) ? results : [results];
+    const arr: any[] = Array.isArray(results) ? results : [results];
     return arr
-      .filter((q: any) => q && q.symbol)
-      .map((q: any) => ({
+      .filter((q) => q && q.symbol)
+      .map((q) => ({
         symbol: q.symbol,
         name: q.longName || q.shortName || q.symbol,
         price: q.regularMarketPrice ?? 0,
@@ -60,7 +62,8 @@ export async function getQuotes(symbols: string[]): Promise<StockQuote[]> {
         week52High: q.fiftyTwoWeekHigh,
         week52Low: q.fiftyTwoWeekLow,
       }));
-  } catch {
+  } catch (err) {
+    console.error("[yahoo.quotes]", (err as Error).message);
     return [];
   }
 }

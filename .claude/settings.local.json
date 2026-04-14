@@ -7,7 +7,26 @@
       "Read(//c/Program Files/GitHub CLI//**)",
       "Read(//c/Program Files \\(x86\\)/**)",
       "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
-      "Bash(gh --version)"
+      "Bash(gh --version)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(npm --version)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(48\\).toString\\('base64url'\\)\\)\")",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(curl -s http://localhost:5173/ -o /dev/null -w \"frontend: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/api/market/overview)",
+      "Bash(curl -s http://localhost:3000/api/market/movers)",
+      "Bash(curl -s \"http://localhost:3000/api/stocks/search?q=AAPL\")",
+      "Bash(node -e ':*)",
+      "Bash(npm view:*)",
+      "Bash(grep -v '\\\\.map$')",
+      "Bash(grep -v '\\\\.d\\\\.ts$')",
+      "Bash(node -e \"import\\('dotenv/config'\\).then\\(\\(\\) => console.log\\('ANTHROPIC_API_KEY set?', !!process.env.ANTHROPIC_API_KEY, 'length:', \\(process.env.ANTHROPIC_API_KEY||''\\).length\\)\\)\")",
+      "Bash(node --input-type=module -e ':*)",
+      "Bash(curl -s -X POST http://localhost:3000/api/analysis/portfolio -H \"Content-Type: application/json\" -d '{\"portfolio\":[{\"symbol\":\"AAPL\",\"shares\":1}]}' -m 120)"
     ]
   }
 }
