@@ -26,7 +26,9 @@
       "Bash(grep -v '\\\\.d\\\\.ts$')",
       "Bash(node -e \"import\\('dotenv/config'\\).then\\(\\(\\) => console.log\\('ANTHROPIC_API_KEY set?', !!process.env.ANTHROPIC_API_KEY, 'length:', \\(process.env.ANTHROPIC_API_KEY||''\\).length\\)\\)\")",
       "Bash(node --input-type=module -e ':*)",
-      "Bash(curl -s -X POST http://localhost:3000/api/analysis/portfolio -H \"Content-Type: application/json\" -d '{\"portfolio\":[{\"symbol\":\"AAPL\",\"shares\":1}]}' -m 120)"
+      "Bash(curl -s -X POST http://localhost:3000/api/analysis/portfolio -H \"Content-Type: application/json\" -d '{\"portfolio\":[{\"symbol\":\"AAPL\",\"shares\":1}]}' -m 120)",
+      "Bash(curl -s -o /dev/null -w \"backend: %{http_code}\\\\n\" http://localhost:3000/api/health)",
+      "Bash(curl -s -o /dev/null -w \"frontend: %{http_code}\\\\n\" http://localhost:5173/)"
     ]
   }
 }

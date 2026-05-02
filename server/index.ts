@@ -36,9 +36,9 @@ app.use("/api/analysis", analysisRouter);
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 if (process.env.NODE_ENV === "production") {
-  const clientDist = path.resolve(__dirname, "../client");
+  const clientDist = path.resolve(__dirname, "../dist/client");
   app.use(express.static(clientDist));
-  app.get("*", (_req, res) => {
+  app.get(/^(?!\/api).*/, (_req, res) => {
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }
