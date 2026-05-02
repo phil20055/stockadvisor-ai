@@ -47,7 +47,10 @@ export function setupAuth(app: Express) {
     }
   });
 
-  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+  const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
+  const baseUrl =
+    process.env.BASE_URL ||
+    (railwayDomain ? `https://${railwayDomain}` : `http://localhost:${process.env.PORT || 3000}`);
 
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     passport.use(
