@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StockSearch } from "@/components/StockSearch";
 import { api } from "@/lib/api";
@@ -13,7 +12,7 @@ export function WatchlistPage() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="py-20 text-center text-muted-foreground">Loading...</div>;
+    return <div className="py-20 text-center text-muted-foreground">Loading…</div>;
   }
 
   if (!isAuthenticated) return <SignInGate />;
@@ -22,21 +21,22 @@ export function WatchlistPage() {
 
 function SignInGate() {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Card className="w-full max-w-md animate-fade-in">
-        <CardContent className="p-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
-            <Eye className="h-6 w-6 text-primary" />
-          </div>
-          <h2 className="mt-4 text-lg font-semibold">Sign in to use your watchlist</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Save stocks you want to track across sessions.
-          </p>
-          <Button asChild className="mt-6">
-            <a href="/api/auth/google">Sign in with Google</a>
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-[55vh] items-center justify-center">
+      <div className="surface w-full max-w-md rounded-lg p-10 text-center animate-fade-in">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sage/10 text-sage">
+          <Eye className="h-5 w-5" />
+        </div>
+        <h2 className="mt-5 font-display text-2xl font-semibold tracking-tight">
+          A watchlist remembers
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Sign in with Google to keep a list of stocks you're tracking across
+          sessions.
+        </p>
+        <Button asChild className="mt-6">
+          <a href="/api/auth/google">Sign in with Google</a>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -82,42 +82,45 @@ function WatchlistContent() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Watchlist</h1>
-        <p className="text-sm text-muted-foreground">
-          Stocks you want to keep an eye on — prices refresh every 30s.
+    <div className="mx-auto max-w-3xl space-y-6 animate-fade-in">
+      <header className="space-y-1">
+        <p className="font-display text-xs uppercase tracking-[0.18em] text-sage/80">
+          Watchlist
         </p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+          Stocks worth keeping an eye on.
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Quotes refresh automatically every 30 seconds.
+        </p>
+      </header>
+
+      <div className="surface rounded-lg p-4">
+        <StockSearch
+          onSelect={(r) => addMutation.mutate(r.symbol)}
+          placeholder="Search to add a stock to your watchlist…"
+        />
       </div>
 
-      <Card>
-        <CardContent className="p-4">
-          <StockSearch
-            onSelect={(r) => addMutation.mutate(r.symbol)}
-            placeholder="Search to add a stock to your watchlist..."
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-base">
-            <span>Watching</span>
-            <span className="text-xs font-normal text-muted-foreground">
-              {symbols.length} {symbols.length === 1 ? "stock" : "stocks"}
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <div className="surface rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border/40 px-5 py-3">
+          <p className="font-display text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            Watching
+          </p>
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+            {symbols.length}
+          </span>
+        </div>
+        <div className="divide-y divide-border/30">
           {listQuery.isLoading && (
-            <div className="space-y-2">
+            <div className="space-y-1 p-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-14 animate-pulse rounded-lg bg-muted/30" />
+                <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />
               ))}
             </div>
           )}
           {!listQuery.isLoading && symbols.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
+            <p className="py-12 text-center text-sm text-muted-foreground">
               Your watchlist is empty
             </p>
           )}
@@ -126,7 +129,7 @@ function WatchlistContent() {
             return (
               <div
                 key={w.symbol}
-                className="group flex items-center justify-between rounded-lg border border-border/50 px-4 py-3 transition-colors hover:border-border"
+                className="group flex items-center justify-between px-5 py-3 transition-colors hover:bg-accent/30"
               >
                 <div className="min-w-0">
                   <div className="font-mono text-sm font-semibold">{w.symbol}</div>
@@ -136,13 +139,13 @@ function WatchlistContent() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="font-mono text-sm">
+                    <div className="font-mono text-sm tabular-nums">
                       {quote ? formatCurrency(quote.price) : "—"}
                     </div>
                     {quote && (
                       <div
                         className={cn(
-                          "font-mono text-xs",
+                          "font-mono text-xs tabular-nums",
                           colorForChange(quote.changePercent)
                         )}
                       >
@@ -150,20 +153,19 @@ function WatchlistContent() {
                       </div>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 transition-opacity group-hover:opacity-100"
+                  <button
                     onClick={() => removeMutation.mutate(w.symbol)}
+                    className="opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label={`Remove ${w.symbol}`}
                   >
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                  </button>
                 </div>
               </div>
             );
           })}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { History as HistoryIcon, ArrowRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -13,7 +12,7 @@ export function HistoryPage() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="py-20 text-center text-muted-foreground">Loading...</div>;
+    return <div className="py-20 text-center text-muted-foreground">Loading…</div>;
   }
 
   if (!isAuthenticated) return <SignInGate />;
@@ -22,21 +21,21 @@ export function HistoryPage() {
 
 function SignInGate() {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Card className="w-full max-w-md animate-fade-in">
-        <CardContent className="p-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
-            <HistoryIcon className="h-6 w-6 text-primary" />
-          </div>
-          <h2 className="mt-4 text-lg font-semibold">Sign in to view your history</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Every analysis you run is saved here automatically.
-          </p>
-          <Button asChild className="mt-6">
-            <a href="/api/auth/google">Sign in with Google</a>
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-[55vh] items-center justify-center">
+      <div className="surface w-full max-w-md rounded-lg p-10 text-center animate-fade-in">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sage/10 text-sage">
+          <HistoryIcon className="h-5 w-5" />
+        </div>
+        <h2 className="mt-5 font-display text-2xl font-semibold tracking-tight">
+          Every read, on the record
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Sign in to keep an archive of every analysis you've run.
+        </p>
+        <Button asChild className="mt-6">
+          <a href="/api/auth/google">Sign in with Google</a>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -68,10 +67,9 @@ function groupByMinute(rows: AnalysisHistoryRow[]): Map<string, AnalysisHistoryR
 function formatGroupDate(rows: AnalysisHistoryRow[]): string {
   const d = new Date(rows[0].analyzedAt);
   return d.toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
+    weekday: "long",
+    month: "long",
     day: "numeric",
-    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
   });
@@ -89,74 +87,84 @@ function HistoryContent() {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Analysis History</h1>
-        <p className="text-sm text-muted-foreground">
-          Every swing-trade analysis you've run.
+    <div className="space-y-8 animate-fade-in">
+      <header className="space-y-1">
+        <p className="font-display text-xs uppercase tracking-[0.18em] text-sage/80">
+          Archive
         </p>
-      </div>
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+          Every read you've asked for.
+        </h1>
+      </header>
 
       {query.isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-32 animate-pulse rounded-xl bg-muted/30" />
+            <div key={i} className="h-32 animate-pulse rounded-lg bg-muted/30" />
           ))}
         </div>
       )}
 
       {!query.isLoading && (query.data?.length ?? 0) === 0 && (
-        <Card>
-          <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            No analyses yet. Run one from the Portfolio page.
-          </CardContent>
-        </Card>
+        <div className="surface rounded-lg py-16 text-center text-sm text-muted-foreground">
+          No analyses yet. Build a portfolio and ask for a read.
+        </div>
       )}
 
       {Array.from(groups.entries()).map(([key, rows]) => (
         <section key={key} className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground">
-            {formatGroupDate(rows)}
-          </h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="font-display text-base font-semibold">
+              {formatGroupDate(rows)}
+            </h2>
+            <span className="h-px flex-1 bg-border/40" />
+            <span className="font-mono text-xs text-muted-foreground">
+              {rows.length} {rows.length === 1 ? "stock" : "stocks"}
+            </span>
+          </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {rows.map((row) => (
-              <Card key={row.id} className="animate-slide-in">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <CardTitle className="font-mono text-base">{row.symbol}</CardTitle>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {row.companyName}
-                      </p>
-                    </div>
-                    <Badge variant={recBadgeVariant(row.recommendation)}>
-                      {row.recommendation}
+              <article
+                key={row.id}
+                className="surface rounded-lg p-5 animate-slide-in"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-mono text-base font-bold">{row.symbol}</div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {row.companyName}
+                    </p>
+                  </div>
+                  <Badge variant={recBadgeVariant(row.recommendation)}>
+                    {row.recommendation}
+                  </Badge>
+                </div>
+
+                <div className="mt-3 flex items-center gap-2 font-mono text-xs">
+                  <span className="text-muted-foreground">
+                    {row.currentPrice != null ? formatCurrency(row.currentPrice) : "—"}
+                  </span>
+                  <ArrowRight className="h-3 w-3 text-sage/60" />
+                  <span className="text-sage">
+                    {row.targetPrice != null ? formatCurrency(row.targetPrice) : "—"}
+                  </span>
+                </div>
+
+                <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-foreground/80">
+                  {stripCite(row.analysisText)}
+                </p>
+
+                <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                  {row.riskLevel && (
+                    <Badge variant={levelBadgeVariant(row.riskLevel)}>
+                      {row.riskLevel} risk
                     </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div className="flex items-center gap-2 font-mono text-xs">
-                    <span>{row.currentPrice != null ? formatCurrency(row.currentPrice) : "—"}</span>
-                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-primary">
-                      {row.targetPrice != null ? formatCurrency(row.targetPrice) : "—"}
-                    </span>
-                  </div>
-                  <p className="line-clamp-3 text-xs leading-relaxed text-foreground/80">
-                    {stripCite(row.analysisText)}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {row.riskLevel && (
-                      <Badge variant={levelBadgeVariant(row.riskLevel)}>
-                        Risk: {row.riskLevel}
-                      </Badge>
-                    )}
-                    {row.confidence && (
-                      <Badge variant="secondary">Conf: {row.confidence}</Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  )}
+                  {row.confidence && (
+                    <Badge variant="secondary">{row.confidence} conviction</Badge>
+                  )}
+                </div>
+              </article>
             ))}
           </div>
         </section>

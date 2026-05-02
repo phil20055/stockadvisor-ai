@@ -1,12 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { BarChart3, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 
 const NAV_LINKS = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "Overview" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/watchlist", label: "Watchlist" },
   { href: "/history", label: "History" },
@@ -26,16 +27,11 @@ export function Navigation() {
   const firstName = user?.name?.split(" ")[0] ?? "";
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
+    <nav className="sticky top-0 z-40 border-b border-border/40 bg-background/70 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/">
-          <a className="flex items-center gap-2 font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/15 text-primary">
-              <BarChart3 className="h-4 w-4" />
-            </div>
-            <span className="tracking-tight">
-              StockAdvisor<span className="text-primary">.ai</span>
-            </span>
+          <a>
+            <Logo />
           </a>
         </Link>
 
@@ -46,13 +42,16 @@ export function Navigation() {
               <Link key={link.href} href={link.href}>
                 <a
                   className={cn(
-                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                    "relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {link.label}
+                  {active && (
+                    <span className="absolute inset-x-3 -bottom-[17px] h-px bg-gradient-to-r from-transparent via-sage to-transparent" />
+                  )}
                 </a>
               </Link>
             );
@@ -67,14 +66,14 @@ export function Navigation() {
                   <img
                     src={user.avatar}
                     alt=""
-                    className="h-7 w-7 rounded-full border border-border/50"
+                    className="h-7 w-7 rounded-full border border-border/60"
                   />
                 ) : (
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-semibold">
                     {firstName[0]?.toUpperCase()}
                   </div>
                 )}
-                <span className="text-sm">{firstName}</span>
+                <span className="text-sm text-muted-foreground">{firstName}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" />
@@ -82,14 +81,14 @@ export function Navigation() {
               </Button>
             </>
           ) : (
-            <Button asChild size="sm">
+            <Button asChild size="sm" variant="outline">
               <a href="/api/auth/google">Sign in</a>
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-1 overflow-x-auto border-t border-border/50 px-4 py-1.5 md:hidden">
+      <div className="flex items-center gap-1 overflow-x-auto border-t border-border/40 px-4 py-1.5 md:hidden">
         {NAV_LINKS.map((link) => {
           const active = location === link.href;
           return (
@@ -97,7 +96,7 @@ export function Navigation() {
               <a
                 className={cn(
                   "rounded-md px-3 py-1 text-xs font-medium",
-                  active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                  active ? "text-foreground" : "text-muted-foreground"
                 )}
               >
                 {link.label}

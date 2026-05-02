@@ -4,44 +4,57 @@
 
 @layer base {
   :root {
-    --background: 222 20% 7%;
-    --foreground: 210 20% 96%;
-    --card: 222 18% 10%;
-    --card-foreground: 210 20% 96%;
-    --popover: 222 18% 10%;
-    --popover-foreground: 210 20% 96%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 15% 16%;
-    --secondary-foreground: 210 20% 96%;
-    --muted: 222 15% 14%;
-    --muted-foreground: 215 15% 65%;
-    --accent: 222 15% 18%;
-    --accent-foreground: 210 20% 96%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 222 15% 18%;
-    --input: 222 15% 14%;
-    --ring: 217 91% 60%;
-    --radius: 0.75rem;
-    --success: 142 72% 45%;
-    --warning: 38 92% 50%;
-    --danger: 0 72% 51%;
+    /* Surfaces */
+    --background: 200 20% 6%;
+    --foreground: 35 18% 92%;
+    --card: 200 18% 9%;
+    --card-foreground: 35 18% 92%;
+    --popover: 200 22% 7%;
+    --popover-foreground: 35 18% 92%;
+    --muted: 200 12% 13%;
+    --muted-foreground: 35 8% 60%;
+    --accent: 200 12% 16%;
+    --accent-foreground: 35 18% 92%;
+    --secondary: 200 12% 14%;
+    --secondary-foreground: 35 18% 92%;
+    --border: 35 8% 18%;
+    --input: 200 12% 11%;
+    --ring: 145 28% 50%;
+
+    /* Brand */
+    --primary: 145 28% 50%;            /* sage */
+    --primary-foreground: 200 20% 6%;
+    --sage: 145 28% 50%;
+    --gold: 38 70% 60%;
+    --ink: 200 20% 4%;
+
+    /* Semantic */
+    --success: 152 55% 50%;
+    --warning: 38 75% 60%;
+    --danger: 5 72% 60%;
+    --destructive: 5 72% 60%;
+    --destructive-foreground: 35 18% 95%;
+
+    --radius: 0.625rem;
     color-scheme: dark;
   }
 
   html,
   body {
     height: 100%;
-    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-      Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    background:
-      radial-gradient(circle at 10% -10%, hsl(217 91% 60% / 0.08), transparent 40%),
-      radial-gradient(circle at 90% 110%, hsl(262 90% 55% / 0.05), transparent 40%),
-      hsl(var(--background));
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, hsl(145 28% 50% / 0.06), transparent 70%),
+      radial-gradient(ellipse 70% 50% at 90% 110%, hsl(38 70% 60% / 0.04), transparent 70%),
+      linear-gradient(180deg, hsl(200 20% 6% / 1) 0%, hsl(200 22% 5% / 1) 100%);
+    background-attachment: fixed;
     min-height: 100vh;
   }
 
@@ -50,7 +63,8 @@
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.35);
+    background: hsl(var(--sage) / 0.35);
+    color: hsl(var(--foreground));
   }
 
   ::-webkit-scrollbar {
@@ -65,23 +79,83 @@
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-feature-settings: "ss01" 1, "ss02" 1;
+    letter-spacing: -0.015em;
   }
 }
 
 @layer utilities {
-  .font-mono {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-feature-settings: "tnum";
+  .font-display {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-feature-settings: "ss01" 1, "ss02" 1;
+    letter-spacing: -0.02em;
   }
 
-  .glass-card {
-    background: linear-gradient(
-      180deg,
-      hsl(var(--card) / 0.9),
-      hsl(var(--card) / 0.7)
-    );
+  .font-mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-feature-settings: "tnum", "ss01";
+  }
+
+  .surface {
+    background:
+      linear-gradient(180deg, hsl(var(--card) / 0.9), hsl(var(--card) / 0.65));
+    border: 1px solid hsl(var(--border) / 0.6);
     backdrop-filter: blur(8px);
-    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .surface-glow {
+    box-shadow:
+      0 0 0 1px hsl(var(--border) / 0.4),
+      0 1px 0 0 hsl(var(--foreground) / 0.03) inset,
+      0 24px 60px -24px hsl(var(--ink) / 0.6);
+  }
+
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' /%3E%3C/svg%3E");
+  }
+
+  .live-dot {
+    position: relative;
+    display: inline-flex;
+    height: 8px;
+    width: 8px;
+    border-radius: 9999px;
+    background: hsl(var(--success));
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: hsl(var(--success));
+    animation: pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    opacity: 0.6;
+  }
+
+  .divider-soft {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--border)) 50%,
+      transparent 100%
+    );
+    height: 1px;
   }
 }

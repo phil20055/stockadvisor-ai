@@ -35,9 +35,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        sage: "hsl(var(--sage))",
+        gold: "hsl(var(--gold))",
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         danger: "hsl(var(--danger))",
+        ink: "hsl(var(--ink))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -45,7 +48,12 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
+        display: ["Fraunces", "ui-serif", "Georgia", "serif"],
+        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "Fira Code", "ui-monospace", "monospace"],
+      },
+      fontFeatureSettings: {
+        display: '"ss01", "ss02"',
       },
       keyframes: {
         "fade-in": {
@@ -56,10 +64,19 @@ export default {
           from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        ticker: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        pulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
       },
       animation: {
-        "fade-in": "fade-in 0.3s ease-out",
-        "slide-in": "slide-in 0.4s ease-out",
+        "fade-in": "fade-in 0.4s ease-out",
+        "slide-in": "slide-in 0.5s cubic-bezier(0.22, 1, 0.36, 1)",
+        ticker: "ticker 60s linear infinite",
       },
     },
   },
