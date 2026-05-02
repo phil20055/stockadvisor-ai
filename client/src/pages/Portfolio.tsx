@@ -144,7 +144,7 @@ export function PortfolioPage() {
             </div>
           )}
 
-          <div className="surface rounded-lg p-5">
+          <div className="surface relative z-30 rounded-lg p-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="font-display text-[11px] uppercase tracking-[0.16em] text-sage/80">

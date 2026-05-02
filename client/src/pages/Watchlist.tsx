@@ -95,7 +95,7 @@ function WatchlistContent() {
         </p>
       </header>
 
-      <div className="surface rounded-lg p-4">
+      <div className="surface relative z-30 rounded-lg p-4">
         <StockSearch
           onSelect={(r) => addMutation.mutate(r.symbol)}
           placeholder="Search to add a stock to your watchlist…"

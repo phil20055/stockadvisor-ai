@@ -68,7 +68,7 @@ export function StockSearch({ onSelect, placeholder = "Search stocks by symbol o
         )}
       </div>
       {open && results.length > 0 && (
-        <Card className="absolute left-0 right-0 top-full z-20 mt-1 max-h-80 overflow-y-auto p-1 shadow-lg">
+        <Card className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto border-border/80 bg-popover/95 p-1 shadow-2xl backdrop-blur-md">
           {results.map((r) => (
             <button
               key={`${r.symbol}-${r.exchange}`}
