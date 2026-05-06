@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { StockSearch } from "@/components/StockSearch";
 import { Sparkline } from "@/components/Sparkline";
 import { NewsList } from "@/components/NewsList";
+import { AnalysisChat } from "@/components/AnalysisChat";
 import { api } from "@/lib/api";
 import { cn, colorForChange, formatCurrency, formatPercent, stripCite } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -376,6 +377,8 @@ function AnalysisPanel({
           <RecommendationCard key={rec.symbol} rec={rec} />
         ))}
       </div>
+
+      <AnalysisChat analysis={analysis} />
 
       <p className="border-t border-border/30 pt-4 text-center text-[11px] text-muted-foreground">
         AI-generated analysis · Educational purposes only · Not financial advice

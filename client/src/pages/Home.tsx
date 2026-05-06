@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, ArrowUpRight, ArrowDownRight, RefreshCw, Clock } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ArrowDownRight, RefreshCw, Clock, Pen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sparkline } from "@/components/Sparkline";
 import { api } from "@/lib/api";
 import { cn, colorForChange, formatCurrency, formatPercent } from "@/lib/utils";
 import { formatEasternClock, getMarketStatus, type MarketStatus } from "@/lib/marketTime";
-import type { MarketIndex, MoversResponse, StockQuote } from "@shared/schema";
+import type { MarketIndex, MoversResponse, MorningRead, StockQuote } from "@shared/schema";
 
 const MARKET_REFETCH_MS = 5 * 60 * 1000;
 
@@ -26,6 +26,12 @@ export function HomePage() {
     refetchInterval: MARKET_REFETCH_MS,
   });
 
+  const morningReadQuery = useQuery<MorningRead>({
+    queryKey: ["market", "morning-read"],
+    queryFn: () => api<MorningRead>("/api/market/morning-read"),
+    staleTime: 60 * 60 * 1000,
+  });
+
   const handleRefresh = () => {
     qc.invalidateQueries({ queryKey: ["market"] });
   };
@@ -36,6 +42,8 @@ export function HomePage() {
         onRefresh={handleRefresh}
         refreshing={indicesQuery.isFetching || moversQuery.isFetching}
       />
+
+      <MorningReadSection read={morningReadQuery.data} loading={morningReadQuery.isLoading} />
 
       <section>
         <SectionHeader
@@ -114,6 +122,82 @@ export function HomePage() {
 }
 
 // ---------------------------------------------------------------------------
+
+function MorningReadSection({
+  read,
+  loading,
+}: {
+  read?: MorningRead;
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <section className="surface surface-glow grain rounded-xl p-8">
+        <div className="space-y-3">
+          <div className="h-3 w-24 animate-pulse rounded bg-muted/30" />
+          <div className="h-6 w-3/4 animate-pulse rounded bg-muted/30" />
+          <div className="h-4 w-full animate-pulse rounded bg-muted/30" />
+          <div className="h-4 w-11/12 animate-pulse rounded bg-muted/30" />
+          <div className="h-4 w-5/6 animate-pulse rounded bg-muted/30" />
+        </div>
+      </section>
+    );
+  }
+  if (!read) return null;
+
+  const generated = new Date(read.generatedAt);
+  const generatedLabel = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(generated);
+
+  return (
+    <section className="surface surface-glow grain relative overflow-hidden rounded-xl">
+      <div className="relative grid grid-cols-1 gap-6 p-8 md:grid-cols-[1fr_auto] md:p-10">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 font-display text-[11px] uppercase tracking-[0.2em] text-sage">
+            <Pen className="h-3 w-3" />
+            The morning read
+            <span className="text-muted-foreground/60">·</span>
+            <span className="font-sans normal-case tracking-normal text-muted-foreground">
+              {generatedLabel} ET
+            </span>
+          </div>
+          <h2 className="font-display text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl">
+            {read.headline}
+          </h2>
+          <div className="space-y-3 text-sm leading-relaxed text-foreground/85 sm:text-[15px]">
+            {read.body.split(/\n\n+/).map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+        </div>
+
+        {read.watchlist.length > 0 && (
+          <aside className="md:w-72 md:border-l md:border-border/40 md:pl-8">
+            <div className="font-display text-[11px] uppercase tracking-[0.2em] text-gold">
+              What to watch
+            </div>
+            <ol className="mt-3 space-y-3 text-sm">
+              {read.watchlist.map((item, i) => (
+                <li key={i} className="flex gap-2.5">
+                  <span className="font-mono text-[10px] font-semibold text-sage/70">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-foreground/85">{item}</span>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function Hero({ onRefresh, refreshing }: { onRefresh: () => void; refreshing: boolean }) {
   const [now, setNow] = useState(new Date());

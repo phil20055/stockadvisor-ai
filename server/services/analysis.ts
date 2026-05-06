@@ -1,5 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { StockQuote, AnalysisRecommendation, PortfolioAnalysis } from "../../shared/schema.js";
+import type {
+  StockQuote,
+  AnalysisRecommendation,
+  PortfolioAnalysis,
+  ChatMessage,
+} from "../../shared/schema.js";
 
 let _client: Anthropic | null = null;
 function getClient(): Anthropic {
@@ -139,4 +144,64 @@ function normalizeLevel(v: any): "Low" | "Medium" | "High" {
   if (s.startsWith("low")) return "Low";
   if (s.startsWith("high")) return "High";
   return "Medium";
+}
+
+// ---------------------------------------------------------------------------
+// Follow-up chat about an analysis
+// ---------------------------------------------------------------------------
+
+const MAX_HISTORY = 16; // cap conversation turns to keep token use sensible
+
+export async function chatAboutAnalysis(args: {
+  analysis: PortfolioAnalysis;
+  history: ChatMessage[];
+}): Promise<string> {
+  const { analysis, history } = args;
+
+  const trimmed = history.slice(-MAX_HISTORY);
+
+  const systemPrompt = `You are Market Sage continuing a conversation about a portfolio analysis you previously delivered. The user can ask follow-up questions about your reasoning, ask for the bear or bull case, ask how a different stock would change things, or push back on your call.
+
+Style:
+- Calm, plain-spoken, slightly literary. No exclamation marks.
+- Be specific. Cite numbers when relevant.
+- Keep replies short — typically 2-5 sentences. Use a brief bullet list only when it genuinely helps.
+- You can use the web_search tool to ground answers in current information when useful.
+- Never use XML tags like <cite>. Plain prose only.
+- Do not give buy/sell advice the user didn't ask for. The original recommendations stand unless the user asks you to revise.
+
+The original analysis (for your reference):
+
+Summary: ${analysis.summary}
+Total portfolio value: $${analysis.totalValue.toFixed(2)}
+
+Per-position recommendations:
+${analysis.recommendations
+  .map(
+    (r) =>
+      `- ${r.symbol} (${r.name}) @ $${r.currentPrice.toFixed(2)} — ${r.recommendation} · target ${
+        r.targetPrice != null ? "$" + r.targetPrice.toFixed(2) : "n/a"
+      } · ${r.riskLevel} risk · ${r.confidence} conviction\n  Reasoning: ${r.reasoning}`
+  )
+  .join("\n")}`;
+
+  const messages = trimmed.map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
+
+  const response = await getClient().beta.messages.create({
+    model: "claude-sonnet-4-5",
+    max_tokens: 1024,
+    betas: ["web-search-2025-03-05"],
+    tools: [{ type: "web_search_20250305", name: "web_search" } as any],
+    system: systemPrompt,
+    messages,
+  });
+
+  let text = "";
+  for (const block of response.content) {
+    if ((block as any).type === "text") text += (block as any).text;
+  }
+  return stripCite(text).trim();
 }

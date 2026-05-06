@@ -124,6 +124,19 @@ export type MoversResponse = {
   losers: StockQuote[];
 };
 
+export type MorningRead = {
+  date: string;
+  generatedAt: number;
+  headline: string;
+  body: string;
+  watchlist: string[];
+};
+
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export type CallOutcome = "win" | "loss" | "neutral" | "open";
 
 export type TrackedCall = {
