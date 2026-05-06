@@ -123,3 +123,38 @@ export type MoversResponse = {
   gainers: StockQuote[];
   losers: StockQuote[];
 };
+
+export type CallOutcome = "win" | "loss" | "neutral" | "open";
+
+export type TrackedCall = {
+  id: number;
+  symbol: string;
+  companyName: string;
+  recommendation: string;
+  riskLevel: string | null;
+  confidence: string | null;
+  targetPrice: number | null;
+  priceAtCall: number | null;
+  priceNow: number | null;
+  changeSince: number | null;
+  changeSincePercent: number | null;
+  outcome: CallOutcome;
+  hitTarget: boolean;
+  daysSince: number;
+  analyzedAt: string;
+  analysisText: string;
+};
+
+export type TrackRecord = {
+  summary: {
+    total: number;
+    settled: number;
+    wins: number;
+    losses: number;
+    hitRate: number; // percent
+    avgReturnPct: number;
+    bestCall: TrackedCall | null;
+    worstCall: TrackedCall | null;
+  };
+  calls: TrackedCall[];
+};

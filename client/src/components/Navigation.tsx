@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { href: "/", label: "Overview" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/watchlist", label: "Watchlist" },
-  { href: "/history", label: "History" },
+  { href: "/history", label: "Track record" },
 ];
 
 export function Navigation() {
