@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, real, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, real, timestamp, json, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -41,10 +41,33 @@ export const analysisHistory = pgTable("analysis_history", {
   analyzedAt: timestamp("analyzed_at").notNull().defaultNow(),
 });
 
+export const predictionOutcomes = pgTable("prediction_outcomes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  symbol: text("symbol").notNull(),
+  predictedAt: timestamp("predicted_at").notNull().defaultNow(),
+  recommendation: text("recommendation").notNull(),
+  targetPrice: real("target_price"),
+  priceAtPrediction: real("price_at_prediction").notNull(),
+  priceAfter3Days: real("price_after_3_days"),
+  priceAfter7Days: real("price_after_7_days"),
+  priceAfter14Days: real("price_after_14_days"),
+  outcomeCorrect: boolean("outcome_correct"),
+  outcomeNotes: text("outcome_notes"),
+  checkedAt: timestamp("checked_at"),
+});
+
+export const systemInsights = pgTable("system_insights", {
+  id: serial("id").primaryKey(),
+  insightText: text("insight_text").notNull(),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   portfolios: many(portfolios),
   watchlists: many(watchlists),
   analysisHistory: many(analysisHistory),
+  predictionOutcomes: many(predictionOutcomes),
 }));
 
 export type User = typeof users.$inferSelect;
@@ -52,6 +75,9 @@ export type NewUser = typeof users.$inferInsert;
 export type Portfolio = typeof portfolios.$inferSelect;
 export type Watchlist = typeof watchlists.$inferSelect;
 export type AnalysisHistoryRow = typeof analysisHistory.$inferSelect;
+export type PredictionOutcome = typeof predictionOutcomes.$inferSelect;
+export type NewPredictionOutcome = typeof predictionOutcomes.$inferInsert;
+export type SystemInsight = typeof systemInsights.$inferSelect;
 
 export type StockQuote = {
   symbol: string;
@@ -135,6 +161,63 @@ export type MorningRead = {
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+};
+
+export type PredictionStatus = "pending" | "correct" | "incorrect";
+
+export type TrackRecordEntry = {
+  id: number;
+  symbol: string;
+  predictedAt: string;
+  recommendation: string;
+  targetPrice: number | null;
+  priceAtPrediction: number;
+  priceAfter3Days: number | null;
+  priceAfter7Days: number | null;
+  priceAfter14Days: number | null;
+  outcomeCorrect: boolean | null;
+  outcomeNotes: string | null;
+  status: PredictionStatus;
+  daysSince: number;
+};
+
+export type AccuracyByType = {
+  recommendation: string;
+  total: number;
+  correct: number;
+  accuracy: number;
+};
+
+export type AccuracyPoint = {
+  date: string;       // YYYY-MM-DD
+  accuracy: number;   // 0-100
+  sample: number;     // count of predictions in window
+};
+
+export type UserTrackRecord = {
+  total: number;
+  resolved: number;
+  pending: number;
+  correct: number;
+  incorrect: number;
+  accuracyPct: number;
+  buyAvgReturnPct: number;
+  byType: AccuracyByType[];
+  bestCall: TrackRecordEntry | null;
+  worstCall: TrackRecordEntry | null;
+  rolling30: AccuracyPoint[];
+  entries: TrackRecordEntry[];
+};
+
+export type SystemTrackRecord = {
+  total: number;
+  resolved: number;
+  accuracyPct: number;
+  buyAvgReturnPct: number;
+  recentCorrect: TrackRecordEntry[];
+  recentIncorrect: TrackRecordEntry[];
+  patterns: string | null;
+  patternsGeneratedAt: string | null;
 };
 
 export type CallOutcome = "win" | "loss" | "neutral" | "open";

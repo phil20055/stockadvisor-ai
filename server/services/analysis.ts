@@ -22,13 +22,13 @@ function stripCite(text: string): string {
   return text.replace(/<cite[^>]*>|<\/cite>/g, "");
 }
 
-function buildPrompt(items: PortfolioInput[]): string {
+function buildPrompt(items: PortfolioInput[], trackRecordContext: string): string {
   const lines = items.map((p) => {
     const q = p.quote;
     return `- ${p.symbol} (${q?.name ?? p.symbol}): ${p.shares} shares at $${q?.price?.toFixed(2) ?? "?"} (${q?.changePercent?.toFixed(2) ?? "?"}% today)`;
   });
 
-  return `You are a professional swing trade analyst. Analyze this portfolio for short-term swing trade opportunities (holding period: 2-30 days).
+  return `${trackRecordContext}You are a professional swing trade analyst. Analyze this portfolio for short-term swing trade opportunities (holding period: 2-30 days).
 
 Portfolio:
 ${lines.join("\n")}
@@ -69,9 +69,10 @@ function extractJson(text: string): any {
 }
 
 export async function analyzePortfolio(
-  items: PortfolioInput[]
+  items: PortfolioInput[],
+  trackRecordContext: string = ""
 ): Promise<PortfolioAnalysis> {
-  const prompt = buildPrompt(items);
+  const prompt = buildPrompt(items, trackRecordContext);
 
   const response = await getClient().beta.messages.create({
     model: "claude-sonnet-4-5",

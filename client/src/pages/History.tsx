@@ -2,22 +2,29 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   History as HistoryIcon,
-  ArrowRight,
-  TrendingUp,
-  TrendingDown,
   Trophy,
   Frown,
   Clock,
   Target,
+  CheckCircle2,
+  XCircle,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AccuracyChart } from "@/components/AccuracyChart";
 import { api } from "@/lib/api";
-import { cn, colorForChange, formatCurrency, formatPercent, stripCite } from "@/lib/utils";
+import { cn, colorForChange, formatCurrency, formatPercent } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import type { CallOutcome, TrackedCall, TrackRecord } from "@shared/schema";
+import type {
+  AccuracyByType,
+  PredictionStatus,
+  TrackRecordEntry,
+  UserTrackRecord,
+} from "@shared/schema";
 
-type Filter = "all" | "open" | "settled" | "win" | "loss";
+type Filter = "all" | "pending" | "correct" | "incorrect";
 
 export function HistoryPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -53,21 +60,17 @@ function SignInGate() {
 
 function TrackRecordContent() {
   const [filter, setFilter] = useState<Filter>("all");
-  const query = useQuery<TrackRecord>({
-    queryKey: ["analysis-history"],
-    queryFn: () => api<TrackRecord>("/api/analysis-history"),
+  const query = useQuery<UserTrackRecord>({
+    queryKey: ["track-record"],
+    queryFn: () => api<UserTrackRecord>("/api/track-record"),
   });
 
   const data = query.data;
-  const calls = data?.calls ?? [];
+  const calls = data?.entries ?? [];
 
   const filtered = useMemo(() => {
     if (filter === "all") return calls;
-    if (filter === "open") return calls.filter((c) => c.outcome === "open");
-    if (filter === "settled") return calls.filter((c) => c.outcome !== "open");
-    if (filter === "win") return calls.filter((c) => c.outcome === "win");
-    if (filter === "loss") return calls.filter((c) => c.outcome === "loss");
-    return calls;
+    return calls.filter((c) => c.status === filter);
   }, [calls, filter]);
 
   return (
@@ -77,11 +80,12 @@ function TrackRecordContent() {
           Track record
         </p>
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          How Sage's calls played out.
+          How Sage's calls have played out.
         </h1>
         <p className="text-sm text-muted-foreground">
-          Calls settle after 14 days. Buy calls win when the stock rises, sell
-          calls win when it falls, hold calls win when it stays within 5%.
+          Predictions are checked at 3, 7, and 14 days. A call settles at 14
+          days: Buy wins on a +2% rise, Sell wins on a 2% fall, Hold wins
+          within ±2%.
         </p>
       </header>
 
@@ -92,15 +96,17 @@ function TrackRecordContent() {
         </div>
       )}
 
-      {!query.isLoading && data && data.calls.length === 0 && (
+      {!query.isLoading && data && data.total === 0 && (
         <div className="surface rounded-lg py-16 text-center text-sm text-muted-foreground">
           No analyses yet. Build a portfolio and ask for a read.
         </div>
       )}
 
-      {data && data.calls.length > 0 && (
+      {data && data.total > 0 && (
         <>
           <SummaryHero record={data} />
+          <AccuracyByTypeRow byType={data.byType} />
+          <TrendChart record={data} />
           <FilterBar filter={filter} setFilter={setFilter} record={data} />
           <CallList calls={filtered} />
         </>
@@ -111,35 +117,40 @@ function TrackRecordContent() {
 
 // ---------------------------------------------------------------------------
 
-function SummaryHero({ record }: { record: TrackRecord }) {
-  const { summary } = record;
-  const hitRateLabel = summary.settled === 0 ? "—" : `${Math.round(summary.hitRate)}%`;
-  const avgReturnLabel = `${summary.avgReturnPct >= 0 ? "+" : ""}${summary.avgReturnPct.toFixed(2)}%`;
+function SummaryHero({ record }: { record: UserTrackRecord }) {
+  const accuracyLabel = record.resolved === 0 ? "—" : `${Math.round(record.accuracyPct)}%`;
+  const buyAvgLabel = `${record.buyAvgReturnPct >= 0 ? "+" : ""}${record.buyAvgReturnPct.toFixed(2)}%`;
 
   return (
     <section className="surface surface-glow grain rounded-xl overflow-hidden">
       <div className="grid grid-cols-1 divide-y divide-border/30 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
         <HeroStat
-          label="Hit rate"
-          value={hitRateLabel}
-          sub={`${summary.wins} wins · ${summary.losses} losses`}
+          label="Accuracy"
+          value={accuracyLabel}
+          sub={`${record.correct} correct · ${record.incorrect} incorrect · ${record.pending} pending`}
           icon={<Trophy className="h-4 w-4" />}
           accent="sage"
         />
         <HeroStat
-          label="Average return"
-          value={avgReturnLabel}
-          sub="across all calls, direction-adjusted"
-          icon={summary.avgReturnPct >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-          accent={summary.avgReturnPct >= 0 ? "success" : "danger"}
+          label="Avg return on Buys"
+          value={buyAvgLabel}
+          sub="14-day mark, settled calls only"
+          icon={
+            record.buyAvgReturnPct >= 0 ? (
+              <TrendingUp className="h-4 w-4" />
+            ) : (
+              <TrendingDown className="h-4 w-4" />
+            )
+          }
+          accent={record.buyAvgReturnPct >= 0 ? "success" : "danger"}
         />
         <HeroStat
           label="Total calls"
-          value={String(summary.total)}
-          sub={`${summary.settled} settled · ${summary.total - summary.settled} open`}
+          value={String(record.total)}
+          sub={`${record.resolved} settled · ${record.pending} open`}
           icon={<Clock className="h-4 w-4" />}
         />
-        <BestWorstStat best={summary.bestCall} worst={summary.worstCall} />
+        <BestWorstStat best={record.bestCall} worst={record.worstCall} />
       </div>
     </section>
   );
@@ -184,8 +195,8 @@ function BestWorstStat({
   best,
   worst,
 }: {
-  best: TrackedCall | null;
-  worst: TrackedCall | null;
+  best: TrackRecordEntry | null;
+  worst: TrackRecordEntry | null;
 }) {
   if (!best && !worst) {
     return (
@@ -209,7 +220,7 @@ function BestWorstStat({
           <Trophy className="h-3.5 w-3.5 text-success shrink-0" />
           <span className="font-mono text-sm font-semibold">{best.symbol}</span>
           <span className="font-mono text-xs text-success tabular-nums">
-            {formatPercent(directionalReturn(best))}
+            {formatDirReturn(best)}
           </span>
         </div>
       )}
@@ -218,7 +229,7 @@ function BestWorstStat({
           <Frown className="h-3.5 w-3.5 text-danger shrink-0" />
           <span className="font-mono text-sm font-semibold">{worst.symbol}</span>
           <span className="font-mono text-xs text-danger tabular-nums">
-            {formatPercent(directionalReturn(worst))}
+            {formatDirReturn(worst)}
           </span>
         </div>
       )}
@@ -226,9 +237,80 @@ function BestWorstStat({
   );
 }
 
-function directionalReturn(call: TrackedCall): number {
-  const r = call.changeSincePercent ?? 0;
-  return call.recommendation === "Sell" ? -r : r;
+function formatDirReturn(call: TrackRecordEntry): string {
+  const price = call.priceAfter14Days ?? call.priceAfter7Days ?? call.priceAfter3Days;
+  if (price == null) return "—";
+  const movePct = ((price - call.priceAtPrediction) / call.priceAtPrediction) * 100;
+  const dir = call.recommendation === "Sell" ? -movePct : movePct;
+  return `${dir >= 0 ? "+" : ""}${dir.toFixed(2)}%`;
+}
+
+// ---------------------------------------------------------------------------
+
+function AccuracyByTypeRow({ byType }: { byType: AccuracyByType[] }) {
+  return (
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {byType.map((row) => {
+        const tone =
+          row.recommendation === "Buy"
+            ? "success"
+            : row.recommendation === "Sell"
+            ? "danger"
+            : "warning";
+        const toneClass =
+          tone === "success" ? "text-success" : tone === "danger" ? "text-danger" : "text-gold";
+        return (
+          <div key={row.recommendation} className="surface rounded-lg p-5">
+            <div className="flex items-center justify-between">
+              <span
+                className={cn(
+                  "font-display text-[11px] uppercase tracking-[0.18em]",
+                  toneClass
+                )}
+              >
+                {row.recommendation} accuracy
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {row.correct}/{row.total}
+              </span>
+            </div>
+            <div className="mt-2 font-display text-2xl font-semibold tabular-nums">
+              {row.total === 0 ? "—" : `${Math.round(row.accuracy)}%`}
+            </div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted/40">
+              <div
+                className={cn(
+                  "h-full rounded-full",
+                  tone === "success"
+                    ? "bg-success"
+                    : tone === "danger"
+                    ? "bg-danger"
+                    : "bg-gold"
+                )}
+                style={{ width: row.total === 0 ? "0%" : `${row.accuracy}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function TrendChart({ record }: { record: UserTrackRecord }) {
+  return (
+    <section className="surface rounded-lg p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="font-display text-[11px] uppercase tracking-[0.18em] text-sage/80">
+          Rolling 30-day accuracy
+        </p>
+        <span className="text-[10px] text-muted-foreground">
+          {record.rolling30.length} data points
+        </span>
+      </div>
+      <AccuracyChart points={record.rolling30} />
+    </section>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -240,26 +322,13 @@ function FilterBar({
 }: {
   filter: Filter;
   setFilter: (f: Filter) => void;
-  record: TrackRecord;
+  record: UserTrackRecord;
 }) {
-  const counts = useMemo(() => {
-    const c = { all: 0, open: 0, settled: 0, win: 0, loss: 0 };
-    c.all = record.calls.length;
-    for (const call of record.calls) {
-      if (call.outcome === "open") c.open++;
-      else c.settled++;
-      if (call.outcome === "win") c.win++;
-      if (call.outcome === "loss") c.loss++;
-    }
-    return c;
-  }, [record]);
-
   const tabs: Array<{ key: Filter; label: string; count: number }> = [
-    { key: "all", label: "All", count: counts.all },
-    { key: "open", label: "Open", count: counts.open },
-    { key: "settled", label: "Settled", count: counts.settled },
-    { key: "win", label: "Wins", count: counts.win },
-    { key: "loss", label: "Losses", count: counts.loss },
+    { key: "all", label: "All", count: record.total },
+    { key: "pending", label: "Pending", count: record.pending },
+    { key: "correct", label: "Correct", count: record.correct },
+    { key: "incorrect", label: "Incorrect", count: record.incorrect },
   ];
 
   return (
@@ -295,7 +364,7 @@ function FilterBar({
 
 // ---------------------------------------------------------------------------
 
-function CallList({ calls }: { calls: TrackedCall[] }) {
+function CallList({ calls }: { calls: TrackRecordEntry[] }) {
   if (calls.length === 0) {
     return (
       <div className="surface rounded-lg py-12 text-center text-sm text-muted-foreground">
@@ -304,11 +373,11 @@ function CallList({ calls }: { calls: TrackedCall[] }) {
     );
   }
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+    <ul className="space-y-2">
       {calls.map((c) => (
-        <CallCard key={c.id} call={c} />
+        <CallRow key={c.id} call={c} />
       ))}
-    </div>
+    </ul>
   );
 }
 
@@ -318,103 +387,87 @@ function recBadgeVariant(rec: string): "success" | "warning" | "danger" {
   return "warning";
 }
 
-function outcomeStyles(outcome: CallOutcome) {
-  switch (outcome) {
-    case "win":
-      return { label: "Win", color: "text-success", bg: "bg-success/10", ring: "ring-success/30" };
-    case "loss":
-      return { label: "Miss", color: "text-danger", bg: "bg-danger/10", ring: "ring-danger/30" };
-    case "neutral":
-      return { label: "Flat", color: "text-muted-foreground", bg: "bg-muted/30", ring: "ring-border" };
-    case "open":
+function statusGlyph(status: PredictionStatus) {
+  switch (status) {
+    case "correct":
+      return { icon: CheckCircle2, color: "text-success", label: "Correct" };
+    case "incorrect":
+      return { icon: XCircle, color: "text-danger", label: "Incorrect" };
+    case "pending":
     default:
-      return { label: "Open", color: "text-gold", bg: "bg-gold/10", ring: "ring-gold/30" };
+      return { icon: Clock, color: "text-muted-foreground", label: "Pending" };
   }
 }
 
-function CallCard({ call }: { call: TrackedCall }) {
-  const styles = outcomeStyles(call.outcome);
-  const directional = directionalReturn(call);
+function CallRow({ call }: { call: TrackRecordEntry }) {
+  const StatusIcon = statusGlyph(call.status).icon;
+  const statusColor = statusGlyph(call.status).color;
+
+  const latestPrice = call.priceAfter14Days ?? call.priceAfter7Days ?? call.priceAfter3Days;
+  const movePct =
+    latestPrice != null
+      ? ((latestPrice - call.priceAtPrediction) / call.priceAtPrediction) * 100
+      : null;
 
   return (
-    <article className={cn("surface relative overflow-hidden rounded-lg p-5 ring-1 animate-slide-in", styles.ring)}>
-      <div className="flex items-start justify-between gap-3">
+    <li className="surface flex flex-col gap-3 rounded-lg p-4 sm:flex-row sm:items-center animate-slide-in">
+      <div className={cn("flex items-center gap-3 sm:w-44", statusColor)}>
+        <StatusIcon className="h-5 w-5 shrink-0" />
         <div className="min-w-0">
-          <div className="font-mono text-base font-bold">{call.symbol}</div>
-          <p className="truncate text-xs text-muted-foreground">{call.companyName}</p>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <Badge variant={recBadgeVariant(call.recommendation)}>{call.recommendation}</Badge>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
-              styles.bg,
-              styles.color
-            )}
-          >
-            {styles.label}
-          </span>
+          <div className="font-mono text-sm font-semibold text-foreground">{call.symbol}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            {new Date(call.predictedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}{" "}
+            · {daysAgoLabel(call.daysSince)}
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 rounded-md border border-border/40 bg-background/30 p-3 text-xs">
-        <div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Then</div>
-          <div className="font-mono text-sm font-semibold tabular-nums">
-            {call.priceAtCall != null ? formatCurrency(call.priceAtCall) : "—"}
-          </div>
-        </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Now</div>
-          <div className="font-mono text-sm font-semibold tabular-nums">
-            {call.priceNow != null ? formatCurrency(call.priceNow) : "—"}
-          </div>
-        </div>
-        <div className="col-span-2 flex items-center justify-between border-t border-border/30 pt-2">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Move since
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <Badge variant={recBadgeVariant(call.recommendation)}>{call.recommendation}</Badge>
+        {call.targetPrice != null && (
+          <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+            <Target className="h-3 w-3" />
+            {formatCurrency(call.targetPrice)}
           </span>
-          <span
-            className={cn(
-              "font-mono text-sm tabular-nums",
-              colorForChange(directional)
-            )}
-          >
-            {call.changeSincePercent != null
-              ? `${directional >= 0 ? "+" : ""}${directional.toFixed(2)}%`
-              : "—"}
-          </span>
-        </div>
+        )}
       </div>
 
-      {call.targetPrice != null && (
-        <div className="mt-3 flex items-center gap-2 text-xs">
-          <Target className={cn("h-3 w-3", call.hitTarget ? "text-success" : "text-muted-foreground")} />
-          <span className="text-muted-foreground">Target</span>
-          <span className="font-mono tabular-nums text-sage">{formatCurrency(call.targetPrice)}</span>
-          {call.hitTarget && (
-            <span className="ml-auto rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-success">
-              hit
-            </span>
-          )}
+      <div className="flex flex-1 items-center gap-3 text-xs">
+        <div className="font-mono">
+          <span className="text-muted-foreground">at </span>
+          <span className="tabular-nums">{formatCurrency(call.priceAtPrediction)}</span>
         </div>
+        {latestPrice != null && (
+          <>
+            <span className="text-muted-foreground">→</span>
+            <div className="font-mono">
+              <span className="text-muted-foreground">now </span>
+              <span className="tabular-nums">{formatCurrency(latestPrice)}</span>
+            </div>
+          </>
+        )}
+        {movePct != null && (
+          <span
+            className={cn(
+              "ml-auto rounded-full px-2 py-0.5 font-mono text-xs tabular-nums",
+              colorForChange(movePct),
+              movePct > 0 ? "bg-success/10" : movePct < 0 ? "bg-danger/10" : "bg-muted/30"
+            )}
+          >
+            {formatPercent(movePct)}
+          </span>
+        )}
+      </div>
+
+      {call.outcomeNotes && (
+        <p className="border-t border-border/30 pt-2 text-xs text-muted-foreground sm:max-w-xs sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+          {call.outcomeNotes}
+        </p>
       )}
-
-      <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-foreground/75">
-        {stripCite(call.analysisText)}
-      </p>
-
-      <div className="mt-3 flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>
-          {new Date(call.analyzedAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </span>
-        <span>{daysAgoLabel(call.daysSince)}</span>
-      </div>
-    </article>
+    </li>
   );
 }
 

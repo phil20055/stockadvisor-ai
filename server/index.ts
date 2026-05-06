@@ -10,6 +10,8 @@ import { watchlistRouter } from "./routes/watchlist.js";
 import { historyRouter } from "./routes/history.js";
 import { marketRouter } from "./routes/market.js";
 import { analysisRouter } from "./routes/analysis.js";
+import { trackRecordRouter } from "./routes/trackRecord.js";
+import { startScheduler } from "./scheduler.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -30,6 +32,7 @@ app.use("/api/stocks", stocksRouter);
 app.use("/api/portfolio", portfolioRouter);
 app.use("/api/watchlist", watchlistRouter);
 app.use("/api/analysis-history", historyRouter);
+app.use("/api/track-record", trackRecordRouter);
 app.use("/api/market", marketRouter);
 app.use("/api/analysis", analysisRouter);
 
@@ -44,5 +47,6 @@ if (process.env.NODE_ENV === "production") {
 }
 
 app.listen(PORT, () => {
-  console.log(`[stockadvisor] server listening on http://localhost:${PORT}`);
+  console.log(`[market-sage] server listening on http://localhost:${PORT}`);
+  startScheduler();
 });

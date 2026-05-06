@@ -4,6 +4,7 @@ import { analysisHistory } from "../../shared/schema.js";
 import { currentUser } from "../auth.js";
 import { getQuote } from "../services/yahoo.js";
 import { analyzePortfolio, chatAboutAnalysis } from "../services/analysis.js";
+import { getTrackRecordPromptContext, savePredictions } from "../services/trackRecord.js";
 
 export const analysisRouter = Router();
 
@@ -24,7 +25,8 @@ analysisRouter.post("/portfolio", async (req, res) => {
   );
 
   try {
-    const analysis = await analyzePortfolio(quoted);
+    const trackRecordContext = await getTrackRecordPromptContext();
+    const analysis = await analyzePortfolio(quoted, trackRecordContext);
 
     const user = currentUser(req);
     if (user) {
@@ -40,8 +42,22 @@ analysisRouter.post("/portfolio", async (req, res) => {
         keyFactors: r.keyFactors,
         currentPrice: r.currentPrice,
       }));
+
+      const predictions = analysis.recommendations
+        .filter((r) => Number.isFinite(r.currentPrice) && r.currentPrice > 0)
+        .map((r) => ({
+          userId: user.id,
+          symbol: r.symbol,
+          recommendation: r.recommendation,
+          targetPrice: r.targetPrice ?? null,
+          priceAtPrediction: r.currentPrice,
+        }));
+
       if (rows.length > 0) {
         await db.insert(analysisHistory).values(rows);
+      }
+      if (predictions.length > 0) {
+        await savePredictions(predictions);
       }
     }
 
@@ -63,7 +79,6 @@ analysisRouter.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Missing conversation history" });
   }
 
-  // Validate / sanitize message shape.
   const cleanHistory = history
     .filter(
       (m: any) =>
