@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StockSearch } from "@/components/StockSearch";
+import { Sparkline } from "@/components/Sparkline";
 import { api } from "@/lib/api";
 import { cn, colorForChange, formatCurrency, formatPercent } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -138,6 +139,7 @@ function WatchlistContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  {quote && <Sparkline quote={quote} width={72} height={24} />}
                   <div className="text-right">
                     <div className="font-mono text-sm tabular-nums">
                       {quote ? formatCurrency(quote.price) : "—"}

@@ -107,8 +107,10 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
       price: q.c,
       change: q.d ?? 0,
       changePercent: q.dp ?? 0,
-      week52High: q.h,
-      week52Low: q.l,
+      open: q.o,
+      high: q.h,
+      low: q.l,
+      prevClose: q.pc,
     };
   } catch (err) {
     console.error(`[finnhub.quote ${symbol}]`, (err as Error).message);
@@ -141,6 +143,10 @@ export async function getIndices(): Promise<MarketIndex[]> {
           price: q.price,
           change: q.change,
           changePercent: q.changePercent,
+          open: q.open,
+          high: q.high,
+          low: q.low,
+          prevClose: q.prevClose,
         };
       })
     );

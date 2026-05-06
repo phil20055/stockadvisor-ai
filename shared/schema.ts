@@ -64,6 +64,20 @@ export type StockQuote = {
   pe?: number;
   week52High?: number;
   week52Low?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  prevClose?: number;
+};
+
+export type StockNews = {
+  id: number;
+  headline: string;
+  source: string;
+  url: string;
+  datetime: number; // unix seconds
+  image?: string;
+  summary?: string;
 };
 
 export type StockSearchResult = {
@@ -99,6 +113,10 @@ export type MarketIndex = {
   price: number;
   change: number;
   changePercent: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  prevClose?: number;
 };
 
 export type MoversResponse = {

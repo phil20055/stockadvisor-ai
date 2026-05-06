@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, ArrowUpRight, ArrowDownRight, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sparkline } from "@/components/Sparkline";
 import { api } from "@/lib/api";
 import { cn, colorForChange, formatCurrency, formatPercent } from "@/lib/utils";
 import { formatEasternClock, getMarketStatus, type MarketStatus } from "@/lib/marketTime";
@@ -230,7 +231,22 @@ function IndexCard({ index }: { index: MarketIndex }) {
           {formatPercent(index.changePercent)}
         </span>
       </div>
-      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-3">
+        <Sparkline
+          quote={{
+            price: index.price,
+            open: index.open,
+            high: index.high,
+            low: index.low,
+            prevClose: index.prevClose,
+            changePercent: index.changePercent,
+          }}
+          width={240}
+          height={36}
+          className="w-full"
+        />
+      </div>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
         <span className={cn("font-mono", colorForChange(index.change))}>
           {index.change >= 0 ? "+" : ""}
           {index.change.toFixed(2)}
@@ -303,6 +319,7 @@ function MoversColumn({
                 <div className="truncate text-xs text-muted-foreground">{s.name}</div>
               </div>
             </div>
+            <Sparkline quote={s} width={64} height={22} className="hidden sm:inline-block" />
             <div className="text-right">
               <div className="font-mono text-sm tabular-nums">{formatCurrency(s.price)}</div>
               <div className={cn("font-mono text-xs tabular-nums", colorForChange(s.changePercent))}>

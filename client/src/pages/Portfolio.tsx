@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { StockSearch } from "@/components/StockSearch";
+import { Sparkline } from "@/components/Sparkline";
+import { NewsList } from "@/components/NewsList";
 import { api } from "@/lib/api";
 import { cn, colorForChange, formatCurrency, formatPercent, stripCite } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -225,6 +227,7 @@ export function PortfolioPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {quote && <Sparkline quote={quote} width={56} height={20} />}
                       <div className="text-right">
                         <div className="font-mono text-sm tabular-nums">
                           {quote ? formatCurrency(quote.price) : "—"}
@@ -436,6 +439,10 @@ function RecommendationCard({ rec }: { rec: AnalysisRecommendation }) {
           ))}
         </ul>
       )}
+
+      <div className="mt-4 border-t border-border/30 pt-3">
+        <NewsList symbol={rec.symbol} limit={3} />
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-1.5">
         <Badge variant={levelBadgeVariant(rec.riskLevel)} className="gap-1">

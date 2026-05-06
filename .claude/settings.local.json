@@ -31,7 +31,9 @@
       "Bash(curl -s -o /dev/null -w \"frontend: %{http_code}\\\\n\" http://localhost:5173/)",
       "Bash(git add *)",
       "Bash(git commit -m 'Stock search: inline results that push layout instead of overlay *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(curl -s -o /dev/null -w \"health: %{http_code}\\\\n\" http://localhost:3000/api/health)",
+      "Bash(curl -s \"http://localhost:3000/api/stocks/AAPL/news?limit=2\")"
     ]
   }
 }
