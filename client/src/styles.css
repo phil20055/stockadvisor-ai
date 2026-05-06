@@ -35,6 +35,10 @@
     --destructive: 5 72% 60%;
     --destructive-foreground: 35 18% 95%;
 
+    /* Chart-specific neon variants — brighter, used only inside sparklines */
+    --neon-up: 145 100% 62%;
+    --neon-down: 350 100% 65%;
+
     --radius: 0.625rem;
     color-scheme: dark;
   }

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { StockQuote } from "@shared/schema";
 
@@ -20,6 +20,7 @@ type Props = {
  * its precision but visually informative.
  */
 export function Sparkline({ quote, className, width = 80, height = 28 }: Props) {
+  const reactId = useId();
   const path = useMemo(() => {
     if (!quote) return null;
     return buildPath(quote, width, height);
@@ -36,8 +37,10 @@ export function Sparkline({ quote, className, width = 80, height = 28 }: Props) 
   }
 
   const up = (quote?.changePercent ?? 0) >= 0;
-  const stroke = up ? "hsl(var(--success))" : "hsl(var(--danger))";
-  const fillId = `spark-fill-${up ? "u" : "d"}`;
+  const stroke = up ? "hsl(var(--neon-up))" : "hsl(var(--neon-down))";
+  const fillId = `${reactId}-fill`;
+  const glowId = `${reactId}-glow`;
+  const sheenId = `${reactId}-sheen`;
 
   return (
     <svg
@@ -49,24 +52,48 @@ export function Sparkline({ quote, className, width = 80, height = 28 }: Props) 
     >
       <defs>
         <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.25" />
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.32" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
+        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id={sheenId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+        </filter>
       </defs>
+
+      {/* Soft halo behind the line for the neon bloom */}
+      <path
+        d={path.line}
+        fill="none"
+        stroke={stroke}
+        strokeOpacity="0.45"
+        strokeWidth="3.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        filter={`url(#${sheenId})`}
+      />
       <path d={path.fill} fill={`url(#${fillId})`} />
       <path
         d={path.line}
         fill="none"
         stroke={stroke}
-        strokeWidth="1.4"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        filter={`url(#${glowId})`}
       />
       <circle
         cx={path.endPoint.x}
         cy={path.endPoint.y}
-        r="1.6"
+        r="2.2"
         fill={stroke}
+        filter={`url(#${glowId})`}
       />
     </svg>
   );
