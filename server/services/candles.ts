@@ -106,19 +106,21 @@ async function tryAlphaVantageCandles(symbol: string): Promise<Candle[] | null> 
   if (Date.now() < avBackoffUntil) return null;
 
   try {
-    // outputsize=full returns ~20 years so 5Y always works.
+    // outputsize=compact (default, free tier) returns the last ~100 trading
+    // days. outputsize=full is now a paid feature — see the rate-limit
+    // warning Alpha Vantage emits for free keys. 100 days covers 1W/1M/3M
+    // and most of 6M; 1Y/5Y are capped to whatever fits.
     const url = `${ALPHA_BASE}?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(
       symbol
-    )}&outputsize=full&apikey=${key}`;
+    )}&outputsize=compact&apikey=${key}`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
 
-    // Alpha Vantage free-tier rate-limit responses come back 200 OK with a
-    // human-readable "Note" / "Information" field.
+    // Free-tier limit / paywall responses come back 200 OK with a
+    // human-readable "Note" or "Information" field.
     if (data?.Note || data?.Information) {
       console.warn("[candles] Alpha Vantage rate-limited:", data.Note ?? data.Information);
-      // Back off for 60s on rate limit.
       avBackoffUntil = Date.now() + 60_000;
       return null;
     }
