@@ -5,6 +5,10 @@ import { currentUser } from "../auth.js";
 import { getQuote } from "../services/yahoo.js";
 import { analyzePortfolio, chatAboutAnalysis } from "../services/analysis.js";
 import { getTrackRecordPromptContext, savePredictions } from "../services/trackRecord.js";
+import {
+  deepReadDirectionToRecommendation,
+  generateDeepRead,
+} from "../services/deepRead.js";
 
 export const analysisRouter = Router();
 
@@ -65,6 +69,55 @@ analysisRouter.post("/portfolio", async (req, res) => {
   } catch (err) {
     console.error("Analysis error:", err);
     res.status(500).json({ error: "Analysis failed", detail: String((err as Error).message) });
+  }
+});
+
+analysisRouter.post("/deep-read", async (req, res) => {
+  const symbol = String(req.body?.symbol ?? "").toUpperCase().trim();
+  if (!symbol) return res.status(400).json({ error: "Missing symbol" });
+
+  try {
+    const analysis = await generateDeepRead(symbol);
+
+    // Save to prediction_outcomes for the self-improvement loop. Skip for guests.
+    const user = currentUser(req);
+    if (user) {
+      try {
+        await savePredictions([
+          {
+            userId: user.id,
+            symbol: analysis.symbol,
+            recommendation: deepReadDirectionToRecommendation(analysis.direction),
+            targetPrice: analysis.targetPrice,
+            priceAtPrediction: analysis.currentPrice,
+            source: "deep_read",
+          },
+        ]);
+        // Also drop a row into analysis_history so the legacy History view stays useful.
+        await db.insert(analysisHistory).values({
+          userId: user.id,
+          symbol: analysis.symbol,
+          companyName: analysis.name,
+          analysisText: analysis.reasoning,
+          recommendation: deepReadDirectionToRecommendation(analysis.direction),
+          targetPrice: analysis.targetPrice,
+          riskLevel: analysis.confidence >= 70 ? "Low" : analysis.confidence >= 41 ? "Medium" : "High",
+          confidence:
+            analysis.confidence >= 71 ? "High" : analysis.confidence >= 41 ? "Medium" : "Low",
+          keyFactors: analysis.keyFactors,
+          currentPrice: analysis.currentPrice,
+        });
+      } catch (err) {
+        console.error("[deep-read save]", err);
+      }
+    }
+
+    res.json(analysis);
+  } catch (err) {
+    console.error("Deep read error:", err);
+    res
+      .status(500)
+      .json({ error: "Deep read failed", detail: String((err as Error).message) });
   }
 });
 

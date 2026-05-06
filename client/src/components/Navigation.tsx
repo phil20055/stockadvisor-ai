@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 const NAV_LINKS = [
   { href: "/", label: "Overview" },
   { href: "/portfolio", label: "Portfolio" },
+  { href: "/deep-read", label: "Deep Read" },
   { href: "/watchlist", label: "Watchlist" },
   { href: "/history", label: "Track record" },
 ];

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, real, timestamp, json, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, real, timestamp, json, boolean, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -55,6 +55,7 @@ export const predictionOutcomes = pgTable("prediction_outcomes", {
   outcomeCorrect: boolean("outcome_correct"),
   outcomeNotes: text("outcome_notes"),
   checkedAt: timestamp("checked_at"),
+  source: varchar("source", { length: 20 }).notNull().default("portfolio"),
 });
 
 export const systemInsights = pgTable("system_insights", {
@@ -207,6 +208,38 @@ export type UserTrackRecord = {
   worstCall: TrackRecordEntry | null;
   rolling30: AccuracyPoint[];
   entries: TrackRecordEntry[];
+};
+
+export type Candle = {
+  time: string; // YYYY-MM-DD
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
+
+export type DeepReadDirection = "up" | "down" | "flat";
+
+export type DeepReadNews = {
+  headline: string;
+  source: string;
+  url: string;
+  publishedAt: number; // unix seconds
+};
+
+export type DeepReadAnalysis = {
+  symbol: string;
+  name: string;
+  currentPrice: number;
+  direction: DeepReadDirection;
+  targetPrice: number;
+  confidence: number; // 0-100
+  timeframeDays: number;
+  reasoning: string;
+  keyFactors: string[];
+  risks: string[];
+  recentNews: DeepReadNews[];
 };
 
 export type SystemTrackRecord = {

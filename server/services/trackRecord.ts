@@ -20,6 +20,7 @@ export type SavedPrediction = {
   recommendation: string;
   targetPrice: number | null;
   priceAtPrediction: number;
+  source?: "portfolio" | "deep_read";
 };
 
 export async function savePredictions(predictions: SavedPrediction[]): Promise<void> {
@@ -31,6 +32,7 @@ export async function savePredictions(predictions: SavedPrediction[]): Promise<v
       recommendation: p.recommendation,
       targetPrice: p.targetPrice,
       priceAtPrediction: p.priceAtPrediction,
+      source: p.source ?? "portfolio",
     }))
   );
 }
@@ -281,8 +283,10 @@ export async function getUserTrackRecord(userId: number): Promise<UserTrackRecor
  * Render the system track record into a system-prompt-friendly preface for
  * the next analysis. Empty string if there's nothing useful yet.
  */
-export async function getTrackRecordPromptContext(): Promise<string> {
-  const sys = await getSystemTrackRecord(50);
+export async function getTrackRecordPromptContext(
+  source?: "portfolio" | "deep_read"
+): Promise<string> {
+  const sys = await getSystemTrackRecord(50, source);
   if (sys.resolved < 3) return "";
 
   const fmtDate = (iso: string) =>
@@ -314,17 +318,33 @@ Use this track record to calibrate your confidence levels and be more careful ab
 `;
 }
 
-export async function getSystemTrackRecord(limit = 50): Promise<SystemTrackRecord> {
-  const resolved = await db
-    .select()
-    .from(predictionOutcomes)
-    .where(isNotNull(predictionOutcomes.outcomeCorrect))
-    .orderBy(desc(predictionOutcomes.predictedAt))
-    .limit(limit);
+export async function getSystemTrackRecord(
+  limit = 50,
+  source?: "portfolio" | "deep_read"
+): Promise<SystemTrackRecord> {
+  const sourceFilter = source ? eq(predictionOutcomes.source, source) : undefined;
 
-  const allCount = await db
-    .select({ c: sql<number>`count(*)` })
-    .from(predictionOutcomes);
+  const resolvedRows = await (sourceFilter
+    ? db
+        .select()
+        .from(predictionOutcomes)
+        .where(sql`${predictionOutcomes.outcomeCorrect} IS NOT NULL AND ${predictionOutcomes.source} = ${source}`)
+        .orderBy(desc(predictionOutcomes.predictedAt))
+        .limit(limit)
+    : db
+        .select()
+        .from(predictionOutcomes)
+        .where(isNotNull(predictionOutcomes.outcomeCorrect))
+        .orderBy(desc(predictionOutcomes.predictedAt))
+        .limit(limit));
+  const resolved = resolvedRows;
+
+  const allCount = await (source
+    ? db
+        .select({ c: sql<number>`count(*)` })
+        .from(predictionOutcomes)
+        .where(eq(predictionOutcomes.source, source))
+    : db.select({ c: sql<number>`count(*)` }).from(predictionOutcomes));
   const total = Number(allCount[0]?.c ?? 0);
 
   const correct = resolved.filter((r) => r.outcomeCorrect).length;

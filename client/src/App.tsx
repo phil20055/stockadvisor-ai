@@ -2,6 +2,7 @@ import { Route, Switch } from "wouter";
 import { Navigation } from "./components/Navigation";
 import { HomePage } from "./pages/Home";
 import { PortfolioPage } from "./pages/Portfolio";
+import { DeepReadPage } from "./pages/DeepRead";
 import { WatchlistPage } from "./pages/Watchlist";
 import { HistoryPage } from "./pages/History";
 
@@ -13,6 +14,7 @@ export default function App() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/portfolio" component={PortfolioPage} />
+          <Route path="/deep-read" component={DeepReadPage} />
           <Route path="/watchlist" component={WatchlistPage} />
           <Route path="/history" component={HistoryPage} />
           <Route>
