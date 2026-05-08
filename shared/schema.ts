@@ -242,16 +242,25 @@ export type DeepReadAnalysis = {
   recentNews: DeepReadNews[];
 };
 
-export type SystemTrackRecord = {
+// Aggregate stats — safe to expose publicly. No per-call data.
+export type SystemStats = {
   total: number;
   resolved: number;
   accuracyPct: number;
   buyAvgReturnPct: number;
-  recentCorrect: TrackRecordEntry[];
-  recentIncorrect: TrackRecordEntry[];
   patterns: string | null;
   patternsGeneratedAt: string | null;
 };
+
+// Per-call rows — sensitive (timing/symbol-level data). Auth required.
+export type SystemRecentCalls = {
+  recentCorrect: TrackRecordEntry[];
+  recentIncorrect: TrackRecordEntry[];
+};
+
+// Full record — used internally by the prompt-context builder. Never
+// returned by a public route in this shape.
+export type SystemTrackRecord = SystemStats & SystemRecentCalls;
 
 export type CallOutcome = "win" | "loss" | "neutral" | "open";
 
