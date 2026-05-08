@@ -118,6 +118,16 @@ export function PortfolioPage() {
     },
   });
 
+  const handleAnalyze = () => {
+    if (!isAuthenticated) {
+      // Send guests to sign-in. Their localStorage portfolio survives the
+      // round-trip and they land back on this page authenticated.
+      window.location.href = "/api/auth/google";
+      return;
+    }
+    analysisMutation.mutate();
+  };
+
   const handleAdd = () => {
     if (!pendingPick) return;
     const shares = Number(sharesInput);
@@ -262,12 +272,17 @@ export function PortfolioPage() {
             className="w-full"
             size="lg"
             disabled={holdings.length === 0 || analysisMutation.isPending}
-            onClick={() => analysisMutation.mutate()}
+            onClick={handleAnalyze}
           >
             {analysisMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Reading the tape…
+              </>
+            ) : !isAuthenticated ? (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Sign in to run analysis
               </>
             ) : (
               <>

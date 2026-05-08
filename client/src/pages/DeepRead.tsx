@@ -74,6 +74,14 @@ export function DeepReadPage() {
     onSuccess: (data) => setAnalysis(data),
   });
 
+  const handleAnalyze = () => {
+    if (!isAuthenticated) {
+      window.location.href = "/api/auth/google";
+      return;
+    }
+    analysisMutation.mutate();
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <header className="space-y-1">
@@ -152,12 +160,17 @@ export function DeepReadPage() {
         size="lg"
         className="w-full"
         disabled={!symbol || analysisMutation.isPending}
-        onClick={() => analysisMutation.mutate()}
+        onClick={handleAnalyze}
       >
         {analysisMutation.isPending ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
             Consulting the tape…
+          </>
+        ) : !isAuthenticated ? (
+          <>
+            <Sparkles className="h-4 w-4" />
+            Sign in to ask the Sage
           </>
         ) : (
           <>

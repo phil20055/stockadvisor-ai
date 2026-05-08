@@ -36,6 +36,7 @@
     "drizzle-orm": "^0.36.4",
     "express": "^5.0.1",
     "express-session": "^1.18.1",
+    "helmet": "^8.1.0",
     "lightweight-charts": "^5.2.0",
     "lucide-react": "^0.460.0",
     "node-cron": "^3.0.3",
@@ -53,7 +54,7 @@
     "vite": "^5.4.11",
     "wouter": "^3.3.5",
     "yahoo-finance2": "^3.14.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",
