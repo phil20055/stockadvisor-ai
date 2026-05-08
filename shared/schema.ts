@@ -64,6 +64,16 @@ export const systemInsights = pgTable("system_insights", {
   generatedAt: timestamp("generated_at").notNull().defaultNow(),
 });
 
+// Cached morning column. Keyed by ET calendar date so a process restart
+// still serves today's read instead of triggering a regeneration.
+export const morningReads = pgTable("morning_reads", {
+  date: text("date").primaryKey(),
+  headline: text("headline").notNull(),
+  body: text("body").notNull(),
+  watchlist: json("watchlist").$type<string[]>().notNull().default([]),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   portfolios: many(portfolios),
   watchlists: many(watchlists),

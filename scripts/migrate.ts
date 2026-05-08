@@ -32,6 +32,14 @@ ALTER TABLE prediction_outcomes
   ADD COLUMN IF NOT EXISTS source VARCHAR(20) NOT NULL DEFAULT 'portfolio';
 
 CREATE INDEX IF NOT EXISTS idx_prediction_outcomes_source ON prediction_outcomes(source);
+
+CREATE TABLE IF NOT EXISTS morning_reads (
+  date TEXT PRIMARY KEY,
+  headline TEXT NOT NULL,
+  body TEXT NOT NULL,
+  watchlist JSON NOT NULL DEFAULT '[]'::json,
+  generated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 `;
 
 async function run() {

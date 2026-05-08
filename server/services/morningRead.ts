@@ -1,4 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { eq } from "drizzle-orm";
+import { db } from "../db.js";
+import { morningReads } from "../../shared/schema.js";
 import { getIndices, getMovers } from "./yahoo.js";
 
 let _client: Anthropic | null = null;
@@ -20,6 +23,9 @@ export type MorningRead = {
 };
 
 let cached: MorningRead | null = null;
+// In-flight lock: if generation is already running, concurrent callers
+// await the same Promise instead of starting their own Claude call.
+let inFlight: Promise<MorningRead> | null = null;
 
 function todayKeyET(): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -125,17 +131,85 @@ Constraints:
   };
 }
 
+async function loadFromDb(date: string): Promise<MorningRead | null> {
+  try {
+    const rows = await db
+      .select()
+      .from(morningReads)
+      .where(eq(morningReads.date, date))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      date: row.date,
+      generatedAt: new Date(row.generatedAt).getTime(),
+      headline: row.headline,
+      body: row.body,
+      watchlist: row.watchlist ?? [],
+    };
+  } catch (err) {
+    console.warn("[morningRead] DB lookup failed:", (err as Error).message);
+    return null;
+  }
+}
+
+async function saveToDb(read: MorningRead): Promise<void> {
+  try {
+    // ON CONFLICT DO NOTHING — if two processes both finished generation
+    // simultaneously, the first write wins and the second silently no-ops.
+    await db
+      .insert(morningReads)
+      .values({
+        date: read.date,
+        headline: read.headline,
+        body: read.body,
+        watchlist: read.watchlist,
+      })
+      .onConflictDoNothing({ target: morningReads.date });
+  } catch (err) {
+    console.warn("[morningRead] DB write failed:", (err as Error).message);
+  }
+}
+
 export async function getMorningRead(): Promise<MorningRead> {
   const today = todayKeyET();
+
+  // 1. In-memory hit — fast path.
   if (cached && cached.date === today) return cached;
-  try {
-    const fresh = await generate();
-    cached = fresh;
-    return fresh;
-  } catch (err) {
-    console.error("[morningRead]", (err as Error).message);
-    // If generation failed, return any prior cache rather than nothing.
-    if (cached) return cached;
-    throw err;
+
+  // 2. Generation already in flight — piggyback on the existing call.
+  if (inFlight) return inFlight;
+
+  // 3. DB hit — survives process restarts. No Claude call.
+  const fromDb = await loadFromDb(today);
+  if (fromDb) {
+    cached = fromDb;
+    return fromDb;
   }
+
+  // 4. Cold path — generate, cache in memory, persist to DB.
+  inFlight = (async () => {
+    try {
+      // Re-check the DB once more under the lock in case another worker
+      // wrote a row while we were waiting.
+      const lateDb = await loadFromDb(today);
+      if (lateDb) {
+        cached = lateDb;
+        return lateDb;
+      }
+      const fresh = await generate();
+      cached = fresh;
+      await saveToDb(fresh);
+      return fresh;
+    } catch (err) {
+      console.error("[morningRead]", (err as Error).message);
+      // Fall back to whatever cache we have if generation fails.
+      if (cached) return cached;
+      throw err;
+    } finally {
+      inFlight = null;
+    }
+  })();
+
+  return inFlight;
 }
