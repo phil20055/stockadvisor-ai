@@ -5,10 +5,14 @@ import { analysisHistory } from "../../shared/schema.js";
 import type { CallOutcome, TrackRecord, TrackedCall } from "../../shared/schema.js";
 import { requireAuth, currentUser } from "../auth.js";
 import { getQuote } from "../services/yahoo.js";
+import { rateLimitByUser } from "../services/rateLimit.js";
 
 export const historyRouter = Router();
 
 historyRouter.use(requireAuth);
+// GET /history fans out one Yahoo quote call per unique symbol — tighter cap
+// than other authed read endpoints so a user can't accidentally hammer it.
+historyRouter.use(rateLimitByUser({ name: "history", limit: 30, window: "1 m" }));
 
 const SETTLE_DAYS = 14; // calls older than this are evaluated as settled
 

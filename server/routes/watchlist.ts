@@ -3,10 +3,12 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db.js";
 import { watchlists } from "../../shared/schema.js";
 import { requireAuth, currentUser } from "../auth.js";
+import { rateLimitByUser } from "../services/rateLimit.js";
 
 export const watchlistRouter = Router();
 
 watchlistRouter.use(requireAuth);
+watchlistRouter.use(rateLimitByUser({ name: "watchlist", limit: 60, window: "1 m" }));
 
 watchlistRouter.get("/", async (req, res) => {
   const user = currentUser(req)!;

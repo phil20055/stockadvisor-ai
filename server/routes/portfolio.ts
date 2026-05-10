@@ -3,10 +3,12 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db.js";
 import { portfolios } from "../../shared/schema.js";
 import { requireAuth, currentUser } from "../auth.js";
+import { rateLimitByUser } from "../services/rateLimit.js";
 
 export const portfolioRouter = Router();
 
 portfolioRouter.use(requireAuth);
+portfolioRouter.use(rateLimitByUser({ name: "portfolio", limit: 60, window: "1 m" }));
 
 portfolioRouter.get("/", async (req, res) => {
   const user = currentUser(req)!;

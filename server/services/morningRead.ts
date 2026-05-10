@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db.js";
 import { morningReads } from "../../shared/schema.js";
 import { getIndices, getMovers } from "./yahoo.js";
+import { costFromUsage, recordSpend } from "./anthropicBudget.js";
 
 let _client: Anthropic | null = null;
 function getClient(): Anthropic {
@@ -113,6 +114,8 @@ Constraints:
     tools: [{ type: "web_search_20250305", name: "web_search" } as any],
     messages: [{ role: "user", content: prompt }],
   });
+
+  void recordSpend(costFromUsage((response as any).usage)).catch(() => {});
 
   let text = "";
   for (const block of response.content) {

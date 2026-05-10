@@ -1,7 +1,39 @@
 import type { Candle } from "../../shared/schema.js";
+import { Ratelimit } from "@upstash/ratelimit";
+import { getRedis } from "./rateLimit.js";
 
 const FINNHUB_BASE = "https://finnhub.io/api/v1";
 const ALPHA_BASE = "https://www.alphavantage.co/query";
+
+// Global Alpha Vantage outbound cap. AV's free tier is 5/min — we keep
+// headroom at 4/min across ALL users so caching covers repeat reads and
+// nobody can starve the upstream cap with concurrent requests.
+let _avLimiter: Ratelimit | null = null;
+function getAlphaVantageLimiter(): Ratelimit | null {
+  if (_avLimiter) return _avLimiter;
+  const redis = getRedis();
+  if (!redis) return null;
+  _avLimiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(4, "60 s"),
+    prefix: "rl:av-outbound",
+    analytics: false,
+  });
+  return _avLimiter;
+}
+
+async function reserveAlphaVantageSlot(): Promise<boolean> {
+  const limiter = getAlphaVantageLimiter();
+  if (!limiter) return true; // no Redis → fall through, internal cache still helps
+  try {
+    const result = await limiter.limit("global");
+    return result.success;
+  } catch {
+    // If Redis errors out here we don't want to silently let the cap drop —
+    // fail closed for the outbound call so we never spam AV.
+    return false;
+  }
+}
 
 const TTL_MS = 5 * 60_000; // 5-minute cache per (symbol, timeframe)
 const cache = new Map<string, { value: Candle[]; expiresAt: number }>();
@@ -104,6 +136,14 @@ async function tryAlphaVantageCandles(symbol: string): Promise<Candle[] | null> 
     return null;
   }
   if (Date.now() < avBackoffUntil) return null;
+
+  // Global outbound cap (4/min across all users) — protects AV's 5/min
+  // upstream limit and prevents thundering herd on cache misses.
+  const ok = await reserveAlphaVantageSlot();
+  if (!ok) {
+    console.warn(`[candles] AV outbound cap reached, skipping ${symbol}`);
+    return null;
+  }
 
   try {
     // outputsize=compact (default, free tier) returns the last ~100 trading

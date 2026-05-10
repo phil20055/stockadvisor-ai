@@ -5,6 +5,7 @@ import type {
   PortfolioAnalysis,
   ChatMessage,
 } from "../../shared/schema.js";
+import { costFromUsage, recordSpend } from "./anthropicBudget.js";
 
 let _client: Anthropic | null = null;
 function getClient(): Anthropic {
@@ -81,6 +82,8 @@ export async function analyzePortfolio(
     tools: [{ type: "web_search_20250305", name: "web_search" } as any],
     messages: [{ role: "user", content: prompt }],
   });
+
+  void recordSpend(costFromUsage((response as any).usage)).catch(() => {});
 
   let text = "";
   for (const block of response.content) {
@@ -199,6 +202,8 @@ ${analysis.recommendations
     system: systemPrompt,
     messages,
   });
+
+  void recordSpend(costFromUsage((response as any).usage)).catch(() => {});
 
   let text = "";
   for (const block of response.content) {

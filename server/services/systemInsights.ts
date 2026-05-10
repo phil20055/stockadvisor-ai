@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { desc, isNotNull } from "drizzle-orm";
 import { db } from "../db.js";
 import { predictionOutcomes, systemInsights } from "../../shared/schema.js";
+import { costFromUsage, recordSpend } from "./anthropicBudget.js";
 
 let _client: Anthropic | null = null;
 function getClient(): Anthropic {
@@ -83,6 +84,8 @@ Return ONLY a plain bullet list, one pattern per line, each starting with "- ". 
     max_tokens: 600,
     messages: [{ role: "user", content: prompt }],
   });
+
+  void recordSpend(costFromUsage((response as any).usage)).catch(() => {});
 
   let text = "";
   for (const block of response.content) {
