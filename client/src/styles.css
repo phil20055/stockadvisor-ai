@@ -5,28 +5,28 @@
 @layer base {
   :root {
     /* Surfaces */
-    --background: 0 0% 20%;
-    --foreground: 35 18% 92%;
-    --card: 200 18% 9%;
-    --card-foreground: 35 18% 92%;
-    --popover: 200 22% 7%;
-    --popover-foreground: 35 18% 92%;
-    --muted: 200 12% 13%;
-    --muted-foreground: 35 8% 60%;
-    --accent: 200 12% 16%;
-    --accent-foreground: 35 18% 92%;
-    --secondary: 200 12% 14%;
-    --secondary-foreground: 35 18% 92%;
-    --border: 35 8% 18%;
-    --input: 200 12% 11%;
+    --background: 40 35% 90%;          /* warm cream */
+    --foreground: 200 20% 14%;         /* dark ink — readable on cream + gray */
+    --card: 0 0% 65%;                  /* medium gray */
+    --card-foreground: 200 20% 14%;
+    --popover: 0 0% 95%;               /* light, for dropdowns over cream */
+    --popover-foreground: 200 20% 14%;
+    --muted: 0 0% 78%;                 /* lighter gray for muted surfaces */
+    --muted-foreground: 200 10% 35%;   /* mid-dark for secondary text */
+    --accent: 0 0% 70%;
+    --accent-foreground: 200 20% 14%;
+    --secondary: 0 0% 70%;
+    --secondary-foreground: 200 20% 14%;
+    --border: 0 0% 45%;                /* dark gray, visible on cream and gray */
+    --input: 0 0% 92%;
     --ring: 145 28% 50%;
 
     /* Brand */
     --primary: 145 28% 50%;            /* sage */
-    --primary-foreground: 200 20% 6%;
+    --primary-foreground: 35 18% 95%;  /* light text on sage buttons */
     --sage: 145 28% 50%;
     --gold: 38 70% 60%;
-    --ink: 200 20% 4%;
+    --ink: 200 20% 4%;                 /* still dark — used in shadows */
 
     /* Semantic */
     --success: 152 55% 50%;
@@ -40,7 +40,7 @@
     --neon-down: 350 100% 65%;
 
     --radius: 0.625rem;
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   html,
@@ -55,9 +55,9 @@
   body {
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(ellipse 80% 60% at 50% -10%, hsl(145 28% 50% / 0.06), transparent 70%),
-      radial-gradient(ellipse 70% 50% at 90% 110%, hsl(38 70% 60% / 0.04), transparent 70%),
-      linear-gradient(180deg, hsl(0 0% 20% / 1) 0%, hsl(0 0% 17% / 1) 100%);
+      radial-gradient(ellipse 80% 60% at 50% -10%, hsl(145 28% 50% / 0.08), transparent 70%),
+      radial-gradient(ellipse 70% 50% at 90% 110%, hsl(38 70% 60% / 0.06), transparent 70%),
+      linear-gradient(180deg, hsl(40 35% 92% / 1) 0%, hsl(40 30% 86% / 1) 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
